@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#d9480f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Jualan AGM"><link rel="apple-touch-icon" href="icon-192.png">
+<title>Rekod Jualan – Ayam Gunting Mahkota</title>
+<style>
+:root{--bg:#faf6f0;--card:#fff;--tx:#2a1f16;--mut:#7a6a5c;--ac:#d9480f;--act:#fff;--bd:#e6dccf;--ok:#2b8a3e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1511;--card:#271e18;--tx:#f3e9df;--mut:#a8998a;--ac:#ff8a4c;--act:#1b1511;--bd:#3c2f26;--ok:#69db7c}}
+:root[data-theme="dark"]{--bg:#1b1511;--card:#271e18;--tx:#f3e9df;--mut:#a8998a;--ac:#ff8a4c;--act:#1b1511;--bd:#3c2f26;--ok:#69db7c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:560px;margin:0 auto;padding:14px}
+h1{font-size:19px;margin:4px 0 2px}h2{font-size:15px;margin:0 0 8px}
+.sub{color:var(--mut);font-size:13px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:12px}
+input[type=date],input[type=month],input[type=text],input[type=number]{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{position:relative;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:12px;padding:14px 8px;font:inherit;text-align:center;cursor:pointer}
+.tile b{display:block}.tile small{color:var(--mut)}
+.tile.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,var(--bg))}
+.q{position:absolute;top:6px;right:6px;background:var(--ac);color:var(--act);border-radius:99px;min-width:24px;padding:1px 7px;font-size:13px;font-weight:700}
+.minus{position:absolute;top:6px;left:6px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:99px;width:26px;height:26px;font-size:16px;line-height:1;cursor:pointer}
+.row{display:flex;gap:8px;margin-top:10px}
+.pay{flex:1;padding:12px;border-radius:12px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit;font-weight:600;cursor:pointer}
+.pay.on{background:var(--ac);color:var(--act);border-color:var(--ac)}
+.save{width:100%;margin-top:10px;padding:14px;border:0;border-radius:12px;background:var(--ok);color:var(--act);font:inherit;font-weight:700;font-size:17px;cursor:pointer}
+.ghost{padding:8px 12px;border:1px solid var(--bd);background:transparent;color:var(--tx);border-radius:10px;font:inherit;cursor:pointer}
+.tot{display:flex;justify-content:space-between;margin-top:8px}
+.big{font-size:28px;font-weight:800;color:var(--ac)}
+.ord{display:flex;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--bd)}
+.ord:first-of-type{border-top:0}
+.no{background:var(--bd);border-radius:8px;min-width:30px;text-align:center;font-weight:700;padding:2px 0}
+.ord .d{flex:1;font-size:14px}.ord .d small{color:var(--mut)}
+.x{border:0;background:none;color:var(--mut);font-size:18px;cursor:pointer}
+  .lock .x{display:none}
+table{width:100%;border-collapse:collapse;font-size:14px}td{padding:4px 0}td:last-child{text-align:right}
+.m{display:grid;grid-template-columns:1fr 80px 28px;gap:6px;margin-bottom:6px}
+.msg{color:var(--mut);font-size:13px;min-height:18px;margin-top:6px}
+</style>
+</head>
+<body>
+<main>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h1 id="ttl">🍗 Ayam Gunting Mahkota</h1><button class="ghost" id="gear">⚙ Tetapan</button></div>
+<div class="sub">Rekod jualan harian</div>
+
+<div class="card"><h2>Tarikh berniaga</h2><input type="date" id="date"><h2 style="margin-top:10px">Nilai awal (duit asal dalam laci)</h2><input type="number" id="fl" min="0" step="0.1" placeholder="RM 0.00"></div>
+
+<div class="card" id="oc">
+  <h2>Order Customer #<span id="cn">1</span></h2>
+  <div class="grid" id="menu"></div>
+  <div class="row"><button class="pay" data-p="QR">QR</button><button class="pay" data-p="Cash">Cash</button></div>
+  <div class="tot"><span>Jumlah order</span><b id="ot">RM 0.00</b></div>
+  <button class="save" id="save">Simpan Order</button>
+  <div class="msg" id="msg"></div>
+</div>
+
+<div class="card" id="sum"></div>
+<div class="card"><h2>Senarai order</h2><div id="list"></div></div>
+
+<div class="card"><h2>Laporan bulanan &amp; rekod harian</h2><input type="month" id="mon"><div id="mrep" style="margin-top:8px"></div></div>
+
+<details class="card" id="set"><summary><b>Tetapan: nama jualan, menu &amp; harga</b></summary><div style="margin-top:10px"><div class="sub">Nama jualan</div><input type="text" id="nm" maxlength="40"></div><div class="sub" style="margin-top:10px">Menu &amp; harga (RM)</div>
+  <div style="margin-top:10px" id="ed"></div>
+  <div class="row"><button class="ghost" id="add">+ Tambah menu</button></div>
+</details>
+<details class="card"><summary><b>Backup data</b></summary><div class="sub" style="margin-top:8px">Eksport untuk simpan backup. Tampal semula untuk pulihkan.</div><textarea id="bk" rows="4" style="width:100%;padding:8px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)"></textarea><div class="row"><button class="ghost" id="ex">Eksport</button><button class="ghost" id="im">Pulihkan</button></div><div class="msg" id="bm"></div></details>
+</main>
+<script>
+const K='jualan-agm-v2';
+const DEF=[{id:'m1',name:'Ayam Gunting Biasa',price:10},{id:'m2',name:'Ayam Gunting Cheese',price:11},{id:'m3',name:'Ayam Cucuk',price:1},{id:'m4',name:'Sosej Jumbo',price:3},{id:'m5',name:'Teh Ais',price:2}];
+let S={menu:DEF,days:{},floats:{},closed:{},name:'Ayam Gunting Mahkota'};
+try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&p.menu&&p.days){S=p;S.floats=S.floats||{};S.closed=S.closed||{};if(typeof S.name!=='string')S.name='Ayam Gunting Mahkota'}}}catch(e){}
+const persist=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rm=n=>'RM '+(Math.round(n*100)/100).toFixed(2);
+const d0=new Date();$('date').value=d0.getFullYear()+'-'+String(d0.getMonth()+1).padStart(2,'0')+'-'+String(d0.getDate()).padStart(2,'0');
+let cur={},pay=null;
+const orders=()=>S.days[$('date').value]||(S.days[$('date').value]=[]);
+const mi=id=>S.menu.find(m=>m.id===id);
+const curTotal=()=>Object.entries(cur).reduce((a,[id,q])=>a+(mi(id)?mi(id).price*q:0),0);
+
+function drawMenu(){
+  $('menu').innerHTML=S.menu.map(m=>{const q=cur[m.id]||0;
+    return `<button class="tile ${q?'on':''}" data-id="${m.id}">${q?`<span class="minus" data-minus="${m.id}">−</span><span class="q">${q}</span>`:''}<b>${esc(m.name)}</b><small>${rm(m.price)}</small></button>`}).join('')+'<button class="tile" id="addt" style="border-style:dashed;color:var(--mut)"><b>＋ Tambah menu</b><small>nama &amp; harga</small></button>';
+  $('ot').textContent=rm(curTotal());
+  document.querySelectorAll('.pay').forEach(b=>b.classList.toggle('on',b.dataset.p===pay));
+}
+$('menu').onclick=e=>{
+  const mn=e.target.closest('[data-minus]');
+  if(mn){const id=mn.dataset.minus;cur[id]=(cur[id]||0)-1;if(cur[id]<=0)delete cur[id];drawMenu();return}
+  if(e.target.closest('#addt')){openSet(true);return}
+  const t=e.target.closest('.tile');if(!t)return;
+  cur[t.dataset.id]=(cur[t.dataset.id]||0)+1;drawMenu();
+};
+document.querySelectorAll('.pay').forEach(b=>b.onclick=()=>{pay=b.dataset.p;drawMenu()});
+$('save').onclick=()=>{
+  if(!Object.keys(cur).length){$('msg').textContent='Pilih sekurang-kurangnya satu makanan.';return}
+  if(!pay){$('msg').textContent='Pilih cara bayaran: QR atau Cash.';return}
+  const o=orders();
+  o.push({n:o.length+1,items:{...cur},pay,total:curTotal(),names:Object.fromEntries(Object.keys(cur).map(id=>[id,mi(id)?mi(id).name:id]))});
+  persist();cur={};pay=null;$('msg').textContent='Order disimpan ✓';drawAll();
+};
+function drawList(){
+  const o=orders();$('cn').textContent=o.length+1;
+  $('list').innerHTML=o.length?o.slice().reverse().map(x=>`<div class="ord"><span class="no">${x.n}</span><div class="d">${Object.entries(x.items).map(([id,q])=>esc(x.names[id])+' ×'+q).join(', ')}<br><small>${x.pay} · ${rm(x.total)}</small></div><button class="x" data-del="${x.n}" title="Padam">✕</button></div>`).join(''):'<div class="sub">Belum ada order untuk tarikh ini.</div>';
+}
+$('list').onclick=e=>{
+  const b=e.target.closest('[data-del]');if(!b)return;
+  if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Padam?';setTimeout(()=>{if(b.isConnected){b.dataset.armed='';b.textContent='✕'}},2500);return}
+  const o=orders();o.splice(o.findIndex(x=>x.n==b.dataset.del),1);o.forEach((x,i)=>x.n=i+1);persist();drawAll();
+};
+function summary(){
+  const o=orders();let tot=0,qr=0,cash=0,it={};
+  o.forEach(x=>{tot+=x.total;x.pay==='QR'?qr+=x.total:cash+=x.total;Object.entries(x.items).forEach(([id,q])=>{const n=x.names[id];it[n]=(it[n]||0)+q})});
+  return {o,tot,qr,cash,it};
+}
+function drawSum(){
+  const s=summary();
+  $('sum').innerHTML=`<h2>Jumlah hari ini (${s.o.length} customer)</h2><div class="big">${rm(s.tot)}</div>
+  <table><tr><td>QR</td><td>${rm(s.qr)}</td></tr><tr><td>Cash</td><td>${rm(s.cash)}</td></tr><tr><td>Nilai awal</td><td>${rm(S.floats[$('date').value]||0)}</td></tr><tr><td><b>Cash dijangka dalam laci</b></td><td><b>${rm((S.floats[$('date').value]||0)+s.cash)}</b></td></tr></table>
+  <table style="margin-top:8px;border-top:1px solid var(--bd)">${Object.entries(s.it).map(([n,q])=>`<tr><td>${esc(n)}</td><td>${q}</td></tr>`).join('')}</table>
+  <div class="row"><button class="ghost" id="copy">Salin ringkasan</button></div><div class="msg" id="cm"></div>${closeUI(s)}`;
+  bindClose(s);
+  $('copy').onclick=async()=>{
+    const t=`${S.name||'Jualan'} – ${$('date').value}\nCustomer: ${s.o.length}\n`+Object.entries(s.it).map(([n,q])=>n+': '+q).join('\n')+`\nQR: ${rm(s.qr)}\nCash: ${rm(s.cash)}\nNilai awal: ${rm(S.floats[$('date').value]||0)}\nCash dijangka dalam laci: ${rm((S.floats[$('date').value]||0)+s.cash)}\nJUMLAH: ${rm(s.tot)}`;
+    try{await navigator.clipboard.writeText(t);$('cm').textContent='Disalin ✓'}catch(e){$('cm').textContent='Tak boleh salin di peranti ini.'}
+  };
+}
+function drawMonth(){
+  const mv=$('mon').value;
+  const ds=Object.keys(S.days).filter(d=>mv&&d.startsWith(mv)&&S.days[d].length).sort();
+  let T=0,Q=0,C=0,N=0,it={};
+  const rows=ds.map(d=>{let t=0,q=0,c=0;S.days[d].forEach(x=>{t+=x.total;x.pay==='QR'?q+=x.total:c+=x.total;Object.entries(x.items).forEach(([id,k])=>{const n=x.names[id];it[n]=(it[n]||0)+k})});T+=t;Q+=q;C+=c;N+=S.days[d].length;return `<tr data-d="${d}" style="cursor:pointer"><td>${d.slice(8)}/${d.slice(5,7)}${S.closed[d]?' ✓':''}</td><td>${S.days[d].length}</td><td>${rm(q)}</td><td>${rm(c)}</td><td><b>${rm(t)}</b></td></tr>`}).join('');
+  $('mrep').innerHTML=ds.length?`<div class="big">${rm(T)}</div><div class="sub">${ds.length} hari berniaga · ${N} customer · QR ${rm(Q)} · Cash ${rm(C)}</div>
+  <div style="overflow-x:auto"><table><tr style="color:var(--mut)"><td>Hari</td><td>Cust</td><td>QR</td><td>Cash</td><td>Jumlah</td></tr>${rows}</table></div>
+  <table style="margin-top:8px;border-top:1px solid var(--bd)">${Object.entries(it).map(([n,q])=>`<tr><td>${esc(n)}</td><td>${q}</td></tr>`).join('')}</table><div class="sub">Tekan satu hari untuk buka rekod hari tu.</div>`:'<div class="sub">Tiada rekod untuk bulan ini.</div>';
+}
+$('mon').onchange=drawMonth;
+$('mrep').onclick=e=>{const r=e.target.closest('[data-d]');if(!r)return;$('date').value=r.dataset.d;$('date').onchange();window.scrollTo(0,0)};
+$('fl').oninput=()=>{S.floats[$('date').value]=parseFloat($('fl').value)||0;persist();drawSum()};
+const isClosed=()=>!!S.closed[$('date').value];
+let auto=true;
+const todayStr=()=>{const t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')};
+document.addEventListener('visibilitychange',()=>{if(auto&&!document.hidden&&$('date').value!==todayStr()){$('date').value=todayStr();$('mon').value=todayStr().slice(0,7);cur={};pay=null;drawAll()}});
+function closeUI(s){
+ const d=$('date').value,c=S.closed[d],exp=(S.floats[d]||0)+s.cash;
+ if(c){const df=Math.round((c.counted-c.expected)*100)/100;
+  return `<div style="margin-top:12px;padding:10px;border:1px solid var(--ok);border-radius:10px"><b>✓ Kedai ditutup</b><div class="sub" style="margin:4px 0">Cash dikira ${rm(c.counted)} · dijangka ${rm(c.expected)} · ${df===0?'tepat':(df>0?'lebih ':'kurang ')+rm(Math.abs(df))}</div><div class="sub">Esok app mula hari baru secara automatik.</div><div class="row"><button class="ghost" id="reopen">Buka semula</button></div></div>`}
+ return `<div style="margin-top:12px;border-top:1px solid var(--bd);padding-top:10px"><button class="save" id="closeb" style="margin-top:0">Tutup Kedai</button><div id="cf" style="display:none;margin-top:8px"><div class="sub">Kira duit cash sebenar dalam laci (termasuk nilai awal). Dijangka: ${rm(exp)}</div><input type="number" id="cc" min="0" step="0.1" placeholder="RM"><div class="row"><button class="pay on" id="cok">Sahkan tutup</button><button class="ghost" id="cno">Batal</button></div></div></div>`;
+}
+function bindClose(s){const d=$('date').value;
+ if($('closeb')){
+  $('closeb').onclick=()=>{$('cf').style.display='block';$('closeb').style.display='none'};
+  $('cno').onclick=()=>{$('cf').style.display='none';$('closeb').style.display=''};
+  $('cok').onclick=()=>{const v=$('cc').value;if(v===''){$('cc').focus();return}
+   S.closed[d]={counted:parseFloat(v)||0,expected:(S.floats[d]||0)+s.cash,total:s.tot,qr:s.qr,cash:s.cash,customers:s.o.length,at:Date.now()};persist();drawAll()};
+ }
+ if($('reopen'))$('reopen').onclick=()=>{delete S.closed[d];persist();drawAll()};
+}
+function applyName(){const n=S.name||'Jualan Saya';$('ttl').textContent='🍗 '+n;document.title='Rekod Jualan – '+n}
+$('nm').oninput=()=>{S.name=$('nm').value.trim();persist();applyName()};
+function openSet(add){const d=$('set');d.open=true;
+ if(add){S.menu.push({id:'m'+Date.now(),name:'Menu baru',price:0});persist();drawEd();drawMenu();
+  const i=$('ed').querySelectorAll('input[type=text]');const l=i[i.length-1];if(l){l.focus();l.select()}}
+ d.scrollIntoView({behavior:'smooth'})}
+$('gear').onclick=()=>openSet(false);
+function drawEd(){
+  $('ed').innerHTML=S.menu.map(m=>`<div class="m"><input type="text" value="${esc(m.name)}" data-n="${m.id}"><input type="number" step="0.1" min="0" value="${m.price}" data-p="${m.id}"><button class="x" data-rm="${m.id}">✕</button></div>`).join('');
+}
+$('ed').oninput=e=>{const t=e.target,id=t.dataset.n||t.dataset.p,m=mi(id);if(!m)return;
+  if(t.dataset.n)m.name=t.value;else m.price=parseFloat(t.value)||0;persist();drawMenu()};
+$('ed').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;S.menu=S.menu.filter(m=>m.id!==b.dataset.rm);delete cur[b.dataset.rm];persist();drawEd();drawMenu()};
+$('add').onclick=()=>{S.menu.push({id:'m'+Date.now(),name:'Menu baru',price:0});persist();drawEd();drawMenu()};
+$('date').onchange=()=>{auto=($('date').value===todayStr());cur={};pay=null;$('msg').textContent='';drawAll()};
+function drawAll(){const cl=isClosed();$('oc').style.display=cl?'none':'';$('fl').disabled=cl;$('list').classList.toggle('lock',cl);$('fl').value=S.floats[$('date').value]||'';drawMenu();drawList();drawSum();drawMonth();}
+$('nm').value=S.name;applyName();drawEd();$('mon').value=$('date').value.slice(0,7);drawAll();
+$('ex').onclick=async()=>{$('bk').value=JSON.stringify(S);try{await navigator.clipboard.writeText($('bk').value);$('bm').textContent='Disalin ✓'}catch(e){$('bm').textContent='Salin teks di atas secara manual.'}};
+$('im').onclick=()=>{try{const p=JSON.parse($('bk').value);if(!p||!Array.isArray(p.menu)||typeof p.days!=='object')throw 0;p.floats=p.floats||{};p.closed=p.closed||{};if(typeof p.name!=='string')p.name='Ayam Gunting Mahkota';S=p;persist();cur={};pay=null;$('nm').value=S.name;applyName();drawEd();drawAll();$('bm').textContent='Data dipulihkan ✓'}catch(e){$('bm').textContent='Teks backup tidak sah.'}};
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
