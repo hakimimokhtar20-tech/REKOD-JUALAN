@@ -32,7 +32,7 @@ textarea{border-radius:14px}
 .tile.on{border-color:#fff;box-shadow:0 0 14px #ff8a1c}
 .q{position:absolute;top:6px;right:8px;background:var(--act);color:var(--ac);border-radius:99px;min-width:24px;padding:1px 7px;font-size:13px;font-weight:700}
 .minus{position:absolute;top:6px;left:8px;border:0;background:#fff;color:var(--act);border-radius:99px;width:26px;height:26px;font-size:16px;line-height:1;text-align:center;cursor:pointer}
-.row{display:flex;gap:8px;margin-top:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .pay{flex:1;padding:12px;border-radius:99px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit;font-weight:600;cursor:pointer}
 .pay.on{background:var(--ac);color:var(--act);border-color:var(--ac)}
 .save{width:100%;margin-top:10px;padding:14px;border:0;border-radius:99px;background:linear-gradient(135deg,#ffd45e,#f59f1b);color:var(--act);font:inherit;font-weight:800;font-size:17px;cursor:pointer}
@@ -54,11 +54,14 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:4px 0}td:las
 #nav button.on{color:var(--ac)}
 #nav .hm{width:64px;height:64px;margin-top:-26px;border-radius:50%;background:linear-gradient(135deg,#ffd45e,#f59f1b);color:var(--act);box-shadow:0 4px 16px rgba(255,138,28,.55);justify-content:center}
 #nav .hm i{font-size:28px}
+#mdl{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:20px}
+.mb{background:#3a1406;border:1px solid var(--bd);border-radius:22px;padding:18px;width:min(100%,380px)}
+.mb .row{flex-wrap:nowrap}.mb .ghost,.mb .save{flex:1;margin:0}.mb .save.dn{background:#e03131;color:#fff}
 #rpt{display:none}
 #rpt table{width:100%;border-collapse:collapse}#rpt td,#rpt th{border-bottom:1px solid #ccc;padding:4px 6px;text-align:left}#rpt td:last-child,#rpt th:last-child{text-align:right}
 #rpt h1{font-size:20px;flex:none}#rpt h2{color:#000;font-size:15px}#rpt h3{margin:14px 0 4px;font-size:14px}
 @page{margin:14mm}
-@media print{#bgw,main,#nav{display:none!important}body{background:#fff!important}#rpt{display:block;color:#000;font:13px system-ui,sans-serif}}
+@media print{#bgw,main,#nav,#mdl{display:none!important}body{background:#fff!important}#rpt{display:block;color:#000;font:13px system-ui,sans-serif}}
 </style>
 </head>
 <body>
@@ -91,6 +94,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:4px 0}td:las
 <details class="card pg" data-t="set" id="pkset" open><summary><b>Tetapan: harga pakej (beli banyak lagi jimat)</b></summary><div class="sub" style="margin-top:8px">Hidupkan untuk menu tertentu sahaja. Setiap 2 biji kena harga pakej, baki 1 biji kena harga satu. Menu yang tak dihidupkan kekal harga biasa.</div><div id="pk"></div></details>
 <details class="card pg" data-t="bk" open><summary><b>Backup data</b></summary><div class="sub" style="margin-top:8px">Eksport untuk simpan backup. Tampal semula untuk pulihkan.</div><textarea id="bk" rows="4" style="width:100%;padding:8px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)"></textarea><div class="row"><button class="ghost" id="ex">Eksport</button><button class="ghost" id="im">Pulihkan</button></div><div class="msg" id="bm"></div></details>
 </main>
+<div id="mdl"><div class="mb"><h2 id="mt"></h2><div class="sub" id="mm" style="color:var(--tx)"></div><div class="row"><button class="ghost" id="mn">Tidak</button><button class="save" id="my"></button></div></div></div>
 <div id="rpt"></div>
 <nav id="nav"><button data-go="sum"><i>📊</i>Ringkasan</button><button data-go="lap"><i>📅</i>Laporan</button><button class="hm" data-go="home"><i>🏠</i></button><button data-go="set"><i>⚙️</i>Tetapan</button><button data-go="bk"><i>💾</i>Backup</button></nav>
 <script>
@@ -135,10 +139,13 @@ function drawList(){
   const o=orders();$('cn').textContent=o.length+1;
   $('list').innerHTML=o.length?o.slice().reverse().map(x=>`<div class="ord"><span class="no">${x.n}</span><div class="d">${Object.entries(x.items).map(([id,q])=>esc(x.names[id])+' ×'+q).join(', ')}<br><small>${x.pay} · ${rm(x.total)}</small></div><button class="x" data-del="${x.n}" title="Padam">✕</button></div>`).join(''):'<div class="sub">Belum ada order untuk tarikh ini.</div>';
 }
-$('list').onclick=e=>{
+$('list').onclick=async e=>{
   const b=e.target.closest('[data-del]');if(!b)return;
-  if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Padam?';setTimeout(()=>{if(b.isConnected){b.dataset.armed='';b.textContent='✕'}},2500);return}
-  const o=orders();o.splice(o.findIndex(x=>x.n==b.dataset.del),1);o.forEach((x,i)=>x.n=i+1);persist();drawAll();
+  const o=orders(),x=o.find(x=>x.n==b.dataset.del);if(!x)return;
+  const d=Object.entries(x.items).map(([id,q])=>x.names[id]+' ×'+q).join(', ');
+  if(!await ask('Padam order #'+x.n+'?',d+' · '+x.pay+' · '+rm(x.total),'Ya, teruskan'))return;
+  if(!await ask('Pasti? Tak boleh diundur','Order #'+x.n+' ('+rm(x.total)+') akan dipadam terus. Nombor customer selepasnya akan turun satu.','Ya, padam',1))return;
+  const k=o.indexOf(x);if(k<0)return;o.splice(k,1);o.forEach((y,n)=>y.n=n+1);persist();drawAll();
 };
 function summary(){
   const o=orders();let tot=0,qr=0,cash=0,it={};
@@ -151,9 +158,10 @@ function drawSum(){
   $('sum').innerHTML=`<h2>Jumlah hari ini (${s.o.length} customer)</h2><div class="big">${rm(s.tot)}</div>
   <table><tr><td>QR</td><td>${rm(s.qr)}</td></tr><tr><td>Cash</td><td>${rm(s.cash)}</td></tr><tr><td>Nilai awal</td><td>${rm(S.floats[$('date').value]||0)}</td></tr><tr><td><b>Cash dijangka dalam laci</b></td><td><b>${rm((S.floats[$('date').value]||0)+s.cash)}</b></td></tr></table>
   <table style="margin-top:8px;border-top:1px solid var(--bd)">${Object.entries(s.it).map(([n,q])=>`<tr><td>${esc(n)}</td><td>${q}</td></tr>`).join('')}</table>
-  <div class="row"><button class="ghost" id="copy">Salin ringkasan</button><button class="ghost" id="pdfd">📄 PDF harian</button></div><div class="msg" id="cm"></div>${closeUI(s)}`;
+  <div class="row"><button class="ghost" id="copy">Salin ringkasan</button><button class="ghost" id="pdfd">📄 PDF harian</button>${!isClosed()&&s.o.length?'<button class="ghost" id="rsd" style="border-color:#ff8787;color:#ff8787">🗑 Reset hari ini</button>':''}</div><div class="msg" id="cm"></div>${closeUI(s)}`;
   bindClose(s);
   $('pdfd').onclick=pdfDay;
+  if($('rsd'))$('rsd').onclick=resetDay;
   $('copy').onclick=async()=>{
     const t=`${S.name||'Jualan'} – ${$('date').value}\nCustomer: ${s.o.length}\n`+Object.entries(s.it).map(([n,q])=>n+': '+q).join('\n')+`\nQR: ${rm(s.qr)}\nCash: ${rm(s.cash)}\nNilai awal: ${rm(S.floats[$('date').value]||0)}\nCash dijangka dalam laci: ${rm((S.floats[$('date').value]||0)+s.cash)}\nJUMLAH: ${rm(s.tot)}`;
     try{await navigator.clipboard.writeText(t);$('cm').textContent='Disalin ✓'}catch(e){$('cm').textContent='Tak boleh salin di peranti ini.'}
@@ -218,6 +226,11 @@ function drawAll(){const cl=isClosed();$('oc').style.display=cl?'none':'';$('fl'
 $('nm').value=S.name;applyName();drawEd();drawPk();$('mon').value=$('date').value.slice(0,7);drawAll();
 $('ex').onclick=async()=>{$('bk').value=JSON.stringify(S);try{await navigator.clipboard.writeText($('bk').value);$('bm').textContent='Disalin ✓'}catch(e){$('bm').textContent='Salin teks di atas secara manual.'}};
 $('im').onclick=()=>{try{const p=JSON.parse($('bk').value);if(!p||!Array.isArray(p.menu)||typeof p.days!=='object')throw 0;p.floats=p.floats||{};p.closed=p.closed||{};if(typeof p.name!=='string')p.name='Ayam Gunting Mahkota';S=p;persist();cur={};pay=null;$('nm').value=S.name;applyName();drawEd();drawPk();drawAll();$('bm').textContent='Data dipulihkan ✓'}catch(e){$('bm').textContent='Teks backup tidak sah.'}};
+const ask=(t,m,y,dn)=>new Promise(r=>{$('mt').textContent=t;$('mm').textContent=m;$('my').textContent=y;$('my').classList.toggle('dn',!!dn);$('mdl').style.display='flex';const f=v=>{$('mdl').style.display='none';r(v)};$('my').onclick=()=>f(true);$('mn').onclick=()=>f(false)});
+async function resetDay(){const d=$('date').value,s=summary();if(!s.o.length)return;
+ if(!await ask('Reset semua order '+dmy(d)+'?',s.o.length+' customer · '+rm(s.tot)+' akan dipadam.','Ya, teruskan'))return;
+ if(!await ask('Pasti? Tak boleh diundur','Semua order hari ini ('+s.o.length+' customer, '+rm(s.tot)+') dipadam terus. Nilai awal kekal.','Ya, reset hari ini',1))return;
+ S.days[d]=[];persist();drawAll()}
 function go(t){document.querySelectorAll('.pg').forEach(e=>e.classList.toggle('show',e.dataset.t===t));document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.go===t));scrollTo(0,0)}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.go));go('home');
 const MY=['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
